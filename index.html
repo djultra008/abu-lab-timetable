@@ -1,0 +1,2134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABU Lab Timetable System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- PDF.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --abu-green: #006400;
+            --abu-gold: #FFD700;
+            --abu-light: #F8F9FA;
+            --abu-dark: #1a1a1a;
+            --abu-blue: #3498db;
+            --abu-red: #e74c3c;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --radius: 10px;
+            --drive-blue: #4285F4;
+            --admin-purple: #8B5CF6;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .header-logo {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeInDown 1s ease-out;
+        }
+        
+        .logo-container {
+            display: inline-flex;
+            align-items: center;
+            background-color: white;
+            padding: 15px 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 15px;
+        }
+        
+        .logo-img {
+            width: 60px;
+            height: 60px;
+            margin-right: 15px;
+            background: linear-gradient(45deg, var(--abu-green), var(--abu-gold));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+        }
+        
+        .logo-text {
+            text-align: left;
+        }
+        
+        .logo-text h1 {
+            color: var(--abu-green);
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+        
+        .logo-text p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 1200px;
+            min-height: 500px;
+            overflow: hidden;
+            position: relative;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .form-container {
+            display: flex;
+            width: 300%;
+            transition: transform 0.5s ease-in-out;
+        }
+        
+        .auth-form {
+            width: 33.33%;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-title {
+            color: var(--abu-green);
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 1.8rem;
+            position: relative;
+            padding-bottom: 10px;
+        }
+        
+        .form-title:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(to right, var(--abu-green), var(--abu-gold));
+        }
+        
+        .form-title.admin-title {
+            color: var(--admin-purple);
+        }
+        
+        .form-title.admin-title:after {
+            background: linear-gradient(to right, var(--admin-purple), #A78BFA);
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .input-group input, select {
+            width: 100%;
+            padding: 14px 15px;
+            border: 2px solid #e1e5ee;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .input-group input:focus, select:focus {
+            border-color: var(--abu-blue);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .btn {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(to right, var(--abu-green), #008000);
+            color: white;
+            margin-top: 10px;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(to right, #005000, var(--abu-green));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 100, 0, 0.2);
+        }
+        
+        .btn-admin {
+            background: linear-gradient(to right, var(--admin-purple), #A78BFA);
+            color: white;
+            margin-top: 10px;
+        }
+        
+        .btn-admin:hover {
+            background: linear-gradient(to right, #7C3AED, var(--admin-purple));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(139, 92, 246, 0.2);
+        }
+        
+        .btn-drive {
+            background-color: var(--drive-blue);
+            color: white;
+            margin-top: 10px;
+        }
+        
+        .btn-drive:hover {
+            background-color: #3367D6;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(66, 133, 244, 0.2);
+        }
+        
+        .form-footer {
+            text-align: center;
+            margin-top: 25px;
+            color: #666;
+        }
+        
+        .form-footer a {
+            color: var(--abu-blue);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .form-footer .admin-link {
+            color: var(--admin-purple);
+        }
+        
+        .error-message {
+            background-color: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--abu-red);
+            color: var(--abu-red);
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .success-message {
+            background-color: rgba(46, 204, 113, 0.1);
+            border-left: 4px solid #2ecc71;
+            color: #27ae60;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .info-message {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid var(--abu-blue);
+            color: var(--abu-blue);
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .dashboard {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .navbar {
+            background: linear-gradient(to right, var(--abu-green), #008000);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar.admin-nav {
+            background: linear-gradient(to right, var(--admin-purple), #A78BFA);
+        }
+        
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+        }
+        
+        .nav-brand i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .nav-user span {
+            margin-right: 15px;
+        }
+        
+        .btn-logout {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .btn-logout:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .dashboard-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        
+        .welcome-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        .welcome-section.admin-welcome {
+            background: linear-gradient(135deg, var(--admin-purple) 0%, #7C3AED 100%);
+        }
+        
+        .welcome-section h2 {
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+        
+        .timetable-section {
+            background-color: white;
+            border-radius: var(--radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            animation: fadeInUp 0.7s ease-out;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .section-header h3 {
+            color: var(--abu-green);
+            font-size: 1.5rem;
+        }
+        
+        .level-selector {
+            display: flex;
+            align-items: center;
+        }
+        
+        .level-selector label {
+            margin-right: 10px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .level-selector select {
+            width: auto;
+            min-width: 150px;
+        }
+        
+        /* PDF VIEWER STYLES */
+        .pdf-container {
+            width: 100%;
+            height: 75vh;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid #e1e5ee;
+            margin-bottom: 20px;
+            position: relative;
+            background-color: white;
+        }
+        
+        .pdf-viewer {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .pdf-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: var(--radius);
+            border-left: 4px solid var(--abu-blue);
+            margin-top: 20px;
+        }
+        
+        .pdf-info h4 {
+            color: var(--abu-green);
+            margin-bottom: 5px;
+        }
+        
+        .pdf-info p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .admin-dashboard {
+            display: none;
+        }
+        
+        .drive-links-manager {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+            border-left: 4px solid var(--drive-blue);
+        }
+        
+        .drive-links-manager h4 {
+            color: var(--drive-blue);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .drive-link-item {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e1e5ee;
+        }
+        
+        .drive-link-item h5 {
+            color: #333;
+            margin-bottom: 8px;
+            display: flex;
+                align-items: center;
+            justify-content: space-between;
+        }
+        
+        .drive-link-item input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .drive-link-item .link-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .drive-link-item .link-actions button {
+            flex: 1;
+            padding: 8px;
+            font-size: 13px;
+        }
+        
+        /* Instructions Panel */
+        .instructions-panel {
+            background-color: #f0f7ff;
+            padding: 20px;
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+            border: 2px solid var(--drive-blue);
+        }
+        
+        .instructions-panel h4 {
+            color: var(--drive-blue);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .instructions-panel ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .instructions-panel li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .instructions-panel code {
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        
+        /* Password Requirements */
+        .password-requirements {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .password-requirements ul {
+            margin-left: 20px;
+            margin-top: 5px;
+        }
+        
+        .requirement {
+            color: #e74c3c;
+        }
+        
+        .requirement.met {
+            color: #27ae60;
+        }
+        
+        /* Admin Login Form */
+        .admin-login-info {
+            background-color: rgba(139, 92, 246, 0.1);
+            border-left: 4px solid var(--admin-purple);
+            color: var(--admin-purple);
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        
+        /* Setup Wizard - HIDDEN BY DEFAULT */
+        .setup-wizard {
+            display: none;
+            background-color: white;
+            border-radius: var(--radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            max-width: 600px;
+            margin: 0 auto;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        .setup-wizard h2 {
+            color: var(--admin-purple);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .setup-step {
+            margin-bottom: 25px;
+        }
+        
+        .setup-step h4 {
+            color: var(--abu-green);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .setup-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        /* Security Warning */
+        .security-warning {
+            background-color: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--abu-red);
+            color: var(--abu-red);
+            padding: 15px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        /* Timetable List */
+        .timetable-list {
+            background-color: white;
+            border-radius: var(--radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            animation: fadeInUp 0.7s ease-out;
+        }
+        
+        .timetable-list h3 {
+            color: var(--abu-green);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .timetable-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #f1f1f1;
+            transition: all 0.3s;
+        }
+        
+        .timetable-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .timetable-item:last-child {
+            border-bottom: none;
+        }
+        
+        .timetable-info h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .timetable-info p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .timetable-actions button {
+            background-color: var(--drive-blue);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .timetable-actions button:hover {
+            background-color: #3367D6;
+        }
+        
+        .floating-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .floating-element {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(155, 89, 182, 0.1));
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+            }
+            50% {
+                transform: translateY(-20px) translateX(10px);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+        
+        @keyframes fa-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                max-width: 100%;
+            }
+            
+            .auth-form {
+                padding: 30px 20px;
+            }
+            
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 15px;
+            }
+            
+            .nav-user {
+                margin-top: 10px;
+                width: 100%;
+                justify-content: space-between;
+                flex-wrap: wrap;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .level-selector {
+                margin-top: 10px;
+            }
+            
+            .pdf-container {
+                height: 60vh;
+            }
+            
+            .drive-link-item .link-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Logo and Header -->
+    <div class="header-logo">
+        <div class="logo-container">
+            <div class="logo-img">
+                <i class="fas fa-university"></i>
+            </div>
+            <div class="logo-text">
+                <h1>Ahmadu Bello University</h1>
+                <p>Lab Practicals Timetable  Telecomms Engineering</p>
+            </div>
+        </div>
+        <p style="color: #666; font-size: 0.95rem;">Department of Electronics and Telecomms</p>
+    </div>
+    
+    <!-- Main Container -->
+    <div class="container" id="mainContainer">
+        <!-- Authentication Forms -->
+        <div class="form-container" id="formContainer">
+            <!-- Student Login Form -->
+            <div class="auth-form" id="loginForm">
+                <h2 class="form-title">Student Login</h2>
+                
+                <div class="info-message" id="loginInfo">
+                    <i class="fas fa-info-circle"></i> Use your ABU email to login
+                </div>
+                
+                <div class="error-message" id="loginError"></div>
+                <div class="success-message" id="loginSuccess"></div>
+                
+                <div class="input-group">
+                    <label for="loginEmail"><i class="fas fa-envelope"></i> Email Address</label>
+                    <input type="email" id="loginEmail" placeholder="student.email@abu.edu.ng" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="loginPassword"><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                </div>
+                
+                <div class="form-footer" style="margin-top: 10px; margin-bottom: 10px;">
+                    <a id="forgotPassword" style="cursor: pointer; font-size: 0.9rem;">Forgot Password?</a>
+                </div>
+                
+                <button type="button" class="btn btn-primary" id="loginBtn">
+                    <i class="fas fa-sign-in-alt"></i> Login as Student
+                </button>
+                
+                <div class="form-footer">
+                    <p>Don't have an account? <a id="showSignup">Sign Up</a></p>
+                    <p style="margin-top: 10px;">
+                        <a id="showAdminLogin" class="admin-link">
+                            <i class="fas fa-user-shield"></i> Administrator Login
+                        </a>
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Student Signup Form -->
+            <div class="auth-form" id="signupForm">
+                <h2 class="form-title">Student Registration</h2>
+                
+                <div class="error-message" id="signupError"></div>
+                <div class="success-message" id="signupSuccess"></div>
+                
+                <div class="input-group">
+                    <label for="signupFullName"><i class="fas fa-user"></i> Full Name</label>
+                    <input type="text" id="signupFullName" placeholder="Enter your full name" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="signupRegNumber"><i class="fas fa-id-card"></i> Registration Number</label>
+                    <input type="text" id="signupRegNumber" placeholder="e.g., 30012345" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="signupEmail"><i class="fas fa-envelope"></i> Email Address</label>
+                    <input type="email" id="signupEmail" placeholder="student.email@abu.edu.ng" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="signupLevel"><i class="fas fa-graduation-cap"></i> Academic Level</label>
+                    <select id="signupLevel">
+                        <option value="100">100 Level</option>
+                        <option value="200">200 Level</option>
+                        <option value="300" selected>300 Level</option>
+                        <option value="400">400 Level</option>
+                        <option value="500">500 Level</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label for="signupPassword"><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="signupPassword" placeholder="Create a password (min. 6 characters)" required>
+                    <div class="password-requirements">
+                        <strong>Password must:</strong>
+                        <ul>
+                            <li id="reqLength" class="requirement">Be at least 6 characters</li>
+                            <li id="reqMatch" class="requirement">Passwords must match</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="signupConfirmPassword"><i class="fas fa-lock"></i> Confirm Password</label>
+                    <input type="password" id="signupConfirmPassword" placeholder="Confirm your password" required>
+                </div>
+                
+                <button type="button" class="btn btn-primary" id="signupBtn">
+                    <i class="fas fa-user-plus"></i> Create Student Account
+                </button>
+                
+                <div class="form-footer">
+                    <p>Already have an account? <a id="showLogin">Login</a></p>
+                </div>
+            </div>
+            
+            <!-- Admin Login Form -->
+            <div class="auth-form" id="adminLoginForm">
+                <h2 class="form-title admin-title">Administrator Login</h2>
+                
+                <div class="admin-login-info" id="adminLoginInfo">
+                    <i class="fas fa-user-shield"></i> System Administrator Access
+                </div>
+                
+                <div class="error-message" id="adminLoginError"></div>
+                <div class="success-message" id="adminLoginSuccess"></div>
+                
+                <div class="input-group">
+                    <label for="adminLoginEmail"><i class="fas fa-envelope"></i> Admin Email</label>
+                    <input type="email" id="adminLoginEmail" placeholder="admin@abu.edu.ng" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="adminLoginPassword"><i class="fas fa-lock"></i> Admin Password</label>
+                    <input type="password" id="adminLoginPassword" placeholder="Enter admin password" required>
+                </div>
+                
+                <button type="button" class="btn btn-admin" id="adminLoginBtn">
+                    <i class="fas fa-sign-in-alt"></i> Login as Administrator
+                </button>
+                
+                <div class="form-footer">
+                    <p><a id="showStudentLogin"><i class="fas fa-user-graduate"></i> Student Login</a></p>
+                    <!-- REMOVED First-Time Setup link from here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Setup Wizard (First-time setup) - HIDDEN BY DEFAULT -->
+        <div class="setup-wizard" id="setupWizard">
+            <h2><i class="fas fa-tools"></i> First-Time System Setup</h2>
+            
+            <div class="security-warning" id="securityWarning">
+                <i class="fas fa-exclamation-triangle"></i> 
+                <strong>Security Warning:</strong> Setup can only be accessed when no admin accounts exist.
+            </div>
+            
+            <div class="setup-step">
+                <h4><i class="fas fa-user-shield"></i> Step 1: Create Admin Account</h4>
+                <p>Create your first administrator account to manage the system.</p>
+                
+                <div class="input-group">
+                    <label for="setupAdminEmail">Admin Email</label>
+                    <input type="email" id="setupAdminEmail" value="admin@abu.edu.ng" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="setupAdminPassword">Admin Password</label>
+                    <input type="password" id="setupAdminPassword" placeholder="Create admin password (min. 6 chars)" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="setupAdminName">Admin Full Name</label>
+                    <input type="text" id="setupAdminName" value="System Administrator" required>
+                </div>
+            </div>
+            
+            <div class="setup-step">
+                <h4><i class="fas fa-database"></i> Step 2: Initialize Database</h4>
+                <p>Set up default Google Drive links for timetables.</p>
+                
+                <div class="input-group">
+                    <label for="defaultDriveLink">Default PDF Link (for all levels)</label>
+                    <input type="text" id="defaultDriveLink" 
+                           value="https://drive.google.com/file/d/1cyxmX2YnK3b6hUp-5osX62HnWXE7N7aE/preview" 
+                           placeholder="Google Drive preview link">
+                </div>
+            </div>
+            
+            <div class="error-message" id="setupError"></div>
+            <div class="success-message" id="setupSuccess"></div>
+            
+            <div class="setup-actions">
+                <button class="btn btn-admin" id="completeSetupBtn">
+                    <i class="fas fa-check-circle"></i> Complete Setup
+                </button>
+                <button class="btn btn-primary" id="cancelSetupBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+        
+        <!-- Student Dashboard -->
+        <div class="dashboard" id="studentDashboard">
+            <nav class="navbar">
+                <div class="nav-brand">
+                    <i class="fas fa-university"></i>
+                    <span>ABU Lab Timetable Portal</span>
+                </div>
+                <div class="nav-user">
+                    <span>Welcome, <span id="studentName">Student</span></span>
+                    <span style="font-size: 0.9rem;">Level: <span id="studentLevel">300</span></span>
+                    <button class="btn btn-logout" id="studentLogoutBtn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </nav>
+            
+            <div class="dashboard-content">
+                <div class="welcome-section">
+                    <h2><i class="fas fa-flask"></i> Lab Timetable Viewer</h2>
+                    <p>Access your laboratory schedule for the current semester. Timetables are loaded from Google Drive links.</p>
+                </div>
+                
+                <div class="timetable-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-calendar-alt"></i> Current Lab Timetable</h3>
+                        <div class="level-selector">
+                            <label for="timetableLevel"><i class="fas fa-filter"></i> Filter by Level:</label>
+                            <select id="timetableLevel">
+                                <option value="100">100 Level</option>
+                                <option value="200">200 Level</option>
+                                <option value="300" selected>300 Level</option>
+                                <option value="400">400 Level</option>
+                                <option value="500">500 Level</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- PDF VIEWER CONTAINER -->
+                    <div class="pdf-container" id="pdfViewer">
+                        <iframe class="pdf-viewer" id="pdfIframe" title="PDF Viewer"></iframe>
+                    </div>
+                    
+                    <div class="pdf-info">
+                        <h4><i class="fas fa-info-circle"></i> Information</h4>
+                        <p id="timetableInfo">Select a level to view the timetable.</p>
+                        <p id="storageInfo" style="color: var(--drive-blue); font-size: 0.85rem; margin-top: 5px;">
+                            <i class="fab fa-google-drive"></i> PDFs loaded from Google Drive
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Admin Dashboard -->
+        <div class="dashboard admin-dashboard" id="adminDashboard">
+            <nav class="navbar admin-nav">
+                <div class="nav-brand">
+                    <i class="fas fa-cogs"></i>
+                    <span>Admin Panel - Timetable Management</span>
+                </div>
+                <div class="nav-user">
+                    <span>Admin: <span id="adminName">Administrator</span></span>
+                    <button class="btn btn-logout" id="adminLogoutBtn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </nav>
+            
+            <div class="dashboard-content">
+                <div class="welcome-section admin-welcome">
+                    <h2><i class="fas fa-tools"></i> Timetable Management System</h2>
+                    <p>Manage Google Drive links for lab timetables. No API setup required!</p>
+                </div>
+                
+                <!-- Instructions Panel -->
+                <div class="instructions-panel">
+                    <h4><i class="fab fa-google-drive"></i> How to Use Google Drive Links</h4>
+                    <ol>
+                        <li><strong>Upload your PDFs to Google Drive</strong> (any folder)</li>
+                        <li><strong>Get shareable links</strong> for each PDF:
+                            <ul style="margin-left: 20px; margin-top: 5px;">
+                                <li>Right-click PDF → Share → Share</li>
+                                <li>Change to "Anyone with the link" → Viewer</li>
+                                <li>Copy the shareable link</li>
+                            </ul>
+                        </li>
+                        <li><strong>Use the shareable link directly</strong> or convert to embeddable link:
+                            <br><code>https://drive.google.com/file/d/FILE_ID/preview</code>
+                            <br>Replace <code>FILE_ID</code> with your file's ID
+                        </li>
+                        <li><strong>Add links below</strong> for each academic level</li>
+                    </ol>
+                </div>
+                
+                <!-- Google Drive Links Manager -->
+                <div class="drive-links-manager">
+                    <h4><i class="fab fa-google-drive"></i> Google Drive Links Configuration</h4>
+                    <p style="color: #666; margin-bottom: 15px;">Add or edit Google Drive links for each academic level:</p>
+                    
+                    <div id="driveLinksContainer">
+                        <!-- Links will be dynamically added here -->
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <button type="button" class="btn btn-drive" id="saveLinksBtn">
+                            <i class="fas fa-save"></i> Save All Links
+                        </button>
+                        <button type="button" class="btn btn-primary" id="testLinksBtn" style="margin-left: 10px;">
+                            <i class="fas fa-test"></i> Test All Links
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- User Management Section -->
+                <div class="timetable-list">
+                    <h3><i class="fas fa-users"></i> User Management</h3>
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn btn-admin" id="createAdminBtn">
+                            <i class="fas fa-user-shield"></i> Create New Admin
+                        </button>
+                        <button class="btn btn-primary" id="viewUsersBtn" style="margin-left: 10px;">
+                            <i class="fas fa-list"></i> View All Users
+                        </button>
+                    </div>
+                    <div id="usersList">
+                        <p style="color: #666; text-align: center;">Click "View All Users" to see registered users.</p>
+                    </div>
+                </div>
+                
+                <!-- Configured Timetables -->
+                <div class="timetable-list">
+                    <h3><i class="fas fa-list"></i> Configured Timetables</h3>
+                    <div id="timetablesList">
+                        <p style="color: #666; text-align: center;">Add Google Drive links above to configure timetables.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Floating Background Elements -->
+    <div class="floating-elements">
+        <div class="floating-element" style="width: 80px; height: 80px; top: 10%; left: 5%;"></div>
+        <div class="floating-element" style="width: 120px; height: 120px; top: 60%; left: 80%;"></div>
+        <div class="floating-element" style="width: 60px; height: 60px; top: 80%; left: 15%;"></div>
+        <div class="floating-element" style="width: 100px; height: 100px; top: 20%; left: 85%;"></div>
+    </div>
+
+    <script>
+        // ==================== FIREBASE CONFIGURATION ====================
+        const firebaseConfig = {
+  apiKey: "AIzaSyCR8H3d5WfJV2V_mg74pkfk_UWqm8p3xgQ",
+  authDomain: "abu-lab-time-table.firebaseapp.com",
+  projectId: "abu-lab-time-table",
+  storageBucket: "abu-lab-time-table.firebasestorage.app",
+  messagingSenderId: "131837691942",
+  appId: "1:131837691942:web:a60d321910837db6db7ee7"
+};
+        
+        // Initialize Firebase
+        const firebaseApp = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+        // ==================== APPLICATION STATE ====================
+        let currentUser = null;
+        let userData = null;
+        let isAdmin = false;
+        let driveLinks = {};
+        let systemNeedsSetup = false;
+        let setupAttempts = 0;
+        const MAX_SETUP_ATTEMPTS = 3;
+        
+        // ==================== DOM ELEMENTS ====================
+        const mainContainer = document.getElementById('mainContainer');
+        const formContainer = document.getElementById('formContainer');
+        const loginForm = document.getElementById('loginForm');
+        const signupForm = document.getElementById('signupForm');
+        const adminLoginForm = document.getElementById('adminLoginForm');
+        const setupWizard = document.getElementById('setupWizard');
+        const studentDashboard = document.getElementById('studentDashboard');
+        const adminDashboard = document.getElementById('adminDashboard');
+        const securityWarning = document.getElementById('securityWarning');
+        
+        // Login elements
+        const loginEmail = document.getElementById('loginEmail');
+        const loginPassword = document.getElementById('loginPassword');
+        const loginBtn = document.getElementById('loginBtn');
+        const forgotPassword = document.getElementById('forgotPassword');
+        const loginError = document.getElementById('loginError');
+        const loginSuccess = document.getElementById('loginSuccess');
+        
+        // Signup elements
+        const signupFullName = document.getElementById('signupFullName');
+        const signupRegNumber = document.getElementById('signupRegNumber');
+        const signupEmail = document.getElementById('signupEmail');
+        const signupLevel = document.getElementById('signupLevel');
+        const signupPassword = document.getElementById('signupPassword');
+        const signupConfirmPassword = document.getElementById('signupConfirmPassword');
+        const signupBtn = document.getElementById('signupBtn');
+        const signupError = document.getElementById('signupError');
+        const signupSuccess = document.getElementById('signupSuccess');
+        const reqLength = document.getElementById('reqLength');
+        const reqMatch = document.getElementById('reqMatch');
+        
+        // Admin login elements
+        const adminLoginEmail = document.getElementById('adminLoginEmail');
+        const adminLoginPassword = document.getElementById('adminLoginPassword');
+        const adminLoginBtn = document.getElementById('adminLoginBtn');
+        const adminLoginError = document.getElementById('adminLoginError');
+        const adminLoginSuccess = document.getElementById('adminLoginSuccess');
+        const adminLoginInfo = document.getElementById('adminLoginInfo');
+        
+        // Setup wizard elements
+        const setupAdminEmail = document.getElementById('setupAdminEmail');
+        const setupAdminPassword = document.getElementById('setupAdminPassword');
+        const setupAdminName = document.getElementById('setupAdminName');
+        const defaultDriveLink = document.getElementById('defaultDriveLink');
+        const completeSetupBtn = document.getElementById('completeSetupBtn');
+        const cancelSetupBtn = document.getElementById('cancelSetupBtn');
+        const setupError = document.getElementById('setupError');
+        const setupSuccess = document.getElementById('setupSuccess');
+        
+        // Form switching
+        const showSignup = document.getElementById('showSignup');
+        const showLogin = document.getElementById('showLogin');
+        const showAdminLogin = document.getElementById('showAdminLogin');
+        const showStudentLogin = document.getElementById('showStudentLogin');
+        
+        // Student dashboard
+        const studentName = document.getElementById('studentName');
+        const studentLevel = document.getElementById('studentLevel');
+        const studentLogoutBtn = document.getElementById('studentLogoutBtn');
+        const timetableLevel = document.getElementById('timetableLevel');
+        const timetableInfo = document.getElementById('timetableInfo');
+        const storageInfo = document.getElementById('storageInfo');
+        const pdfIframe = document.getElementById('pdfIframe');
+        
+        // Admin dashboard
+        const adminName = document.getElementById('adminName');
+        const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+        const driveLinksContainer = document.getElementById('driveLinksContainer');
+        const saveLinksBtn = document.getElementById('saveLinksBtn');
+        const testLinksBtn = document.getElementById('testLinksBtn');
+        const createAdminBtn = document.getElementById('createAdminBtn');
+        const viewUsersBtn = document.getElementById('viewUsersBtn');
+        const usersList = document.getElementById('usersList');
+        const timetablesList = document.getElementById('timetablesList');
+        
+        // ==================== DEFAULT CONFIGURATIONS ====================
+        const timetableInfos = {
+            '100': '100 Level Computer Science Lab Timetable for First Semester 2024/2025 Session.',
+            '200': '200 Level Computer Science Lab Timetable for First Semester 2024/2025 Session.',
+            '300': '300 Level Computer Science Lab Timetable for First Semester 2024/2025 Session.',
+            '400': '400 Level Computer Science Lab Timetable for First Semester 2024/2025 Session.',
+            '500': '500 Level Computer Science Lab Timetable for First Semester 2024/2025 Session.'
+        };
+        
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('Initializing application...');
+            
+            // Initialize event listeners
+            initializeEventListeners();
+            
+            // Check system status
+            await checkSystemStatus();
+            
+            // Show appropriate screen based on system status
+            showAppropriateScreen();
+            
+            // Set up auth state listener
+            auth.onAuthStateChanged(handleAuthStateChange);
+        });
+        
+        async function checkSystemStatus() {
+            console.log('Checking system status...');
+            try {
+                // Check if any admin exists in the system
+                const adminsSnapshot = await db.collection('admins').limit(1).get();
+                const hasAdmins = !adminsSnapshot.empty;
+                
+                console.log('System has admins:', hasAdmins);
+                
+                if (!hasAdmins) {
+                    systemNeedsSetup = true;
+                    console.log('System needs first-time setup');
+                } else {
+                    systemNeedsSetup = false;
+                    // Load drive links if they exist
+                    driveLinks = await loadDriveLinks();
+                    console.log('Drive links loaded:', driveLinks);
+                }
+            } catch (error) {
+                console.error('Error checking system status:', error);
+                // If we can't check, assume system needs setup
+                systemNeedsSetup = true;
+            }
+        }
+        
+        async function loadDriveLinks() {
+            try {
+                const doc = await db.collection('config').doc('driveLinks').get();
+                if (doc.exists) {
+                    return doc.data();
+                } else {
+                    return {};
+                }
+            } catch (error) {
+                console.error('Error loading drive links:', error);
+                return {};
+            }
+        }
+        
+        function showAppropriateScreen() {
+            console.log('Showing appropriate screen. Needs setup:', systemNeedsSetup);
+            
+            // Hide everything first
+            formContainer.style.display = 'none';
+            setupWizard.style.display = 'none';
+            studentDashboard.style.display = 'none';
+            adminDashboard.style.display = 'none';
+            
+            if (systemNeedsSetup) {
+                // Show setup wizard ONLY if system needs setup
+                showSetupWizard(true);
+            } else {
+                // Show student login form
+                showStudentLoginForm();
+            }
+        }
+        
+        function showSetupWizard(isAuthorized = false) {
+            console.log('Showing setup wizard. Authorized:', isAuthorized);
+            
+            if (!isAuthorized) {
+                // Check if user is trying to access setup without authorization
+                setupAttempts++;
+                
+                if (setupAttempts >= MAX_SETUP_ATTEMPTS) {
+                    showGlobalMessage('Too many unauthorized setup attempts. System locked.', 'error');
+                    // Block further attempts for this session
+                    setTimeout(() => {
+                        showStudentLoginForm();
+                        showGlobalMessage('Please contact system administrator for setup.', 'info');
+                    }, 3000);
+                    return;
+                }
+                
+                showGlobalMessage('Setup access denied. System already has admin accounts.', 'error');
+                showStudentLoginForm();
+                return;
+            }
+            
+            // Authorized access - show setup wizard
+            formContainer.style.display = 'none';
+            setupWizard.style.display = 'block';
+            studentDashboard.style.display = 'none';
+            adminDashboard.style.display = 'none';
+            
+            // Show security warning
+            securityWarning.style.display = 'block';
+            
+            // Set default values
+            setupAdminEmail.value = 'admin@abu.edu.ng';
+            setupAdminName.value = 'System Administrator';
+            setupAdminPassword.value = '';
+            clearFormMessages();
+        }
+        
+        function initializeEventListeners() {
+            // Form switching
+            showSignup.addEventListener('click', () => switchForm('signup'));
+            showLogin.addEventListener('click', () => switchForm('login'));
+            showAdminLogin.addEventListener('click', showAdminLoginForm);
+            showStudentLogin.addEventListener('click', showStudentLoginForm);
+            cancelSetupBtn.addEventListener('click', () => {
+                if (systemNeedsSetup) {
+                    showGlobalMessage('Setup cannot be cancelled. System needs initialization.', 'warning');
+                } else {
+                    showStudentLoginForm();
+                }
+            });
+            
+            // Login buttons
+            loginBtn.addEventListener('click', () => handleLogin(false));
+            adminLoginBtn.addEventListener('click', () => handleLogin(true));
+            forgotPassword.addEventListener('click', handleForgotPassword);
+            completeSetupBtn.addEventListener('click', handleFirstTimeSetup);
+            
+            // Signup
+            signupBtn.addEventListener('click', handleSignup);
+            signupPassword.addEventListener('input', validatePassword);
+            signupConfirmPassword.addEventListener('input', validatePassword);
+            
+            // Logout
+            studentLogoutBtn.addEventListener('click', handleLogout);
+            adminLogoutBtn.addEventListener('click', handleLogout);
+            
+            // Timetable level selector
+            timetableLevel.addEventListener('change', loadTimetable);
+            
+            // Admin functions
+            saveLinksBtn.addEventListener('click', saveAllDriveLinks);
+            testLinksBtn.addEventListener('click', testAllDriveLinks);
+            createAdminBtn.addEventListener('click', createAdminAccount);
+            viewUsersBtn.addEventListener('click', viewAllUsers);
+        }
+        
+        // ==================== AUTHENTICATION FUNCTIONS ====================
+        async function handleAuthStateChange(user) {
+            if (user) {
+                currentUser = user;
+                console.log('User authenticated:', user.email);
+                
+                // Don't check system status here - already checked on load
+                // Just check user role
+                try {
+                    const adminDoc = await db.collection('admins').doc(user.uid).get();
+                    
+                    if (adminDoc.exists) {
+                        isAdmin = true;
+                        userData = adminDoc.data();
+                        console.log('User is admin:', userData);
+                        showAdminDashboard();
+                    } else {
+                        const studentDoc = await db.collection('students').doc(user.uid).get();
+                        if (studentDoc.exists) {
+                            isAdmin = false;
+                            userData = studentDoc.data();
+                            console.log('User is student:', userData);
+                            showStudentDashboard();
+                        } else {
+                            // User authenticated but no data
+                            console.log('User has no data, logging out');
+                            await auth.signOut();
+                            showStudentLoginForm();
+                            showGlobalMessage('Account not found. Please sign up again.', 'error');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Auth state error:', error);
+                    showStudentLoginForm();
+                }
+            } else {
+                // No user logged in
+                console.log('No user logged in');
+                // Don't change screens here - showAppropriateScreen handles it
+            }
+        }
+        
+        function switchForm(form) {
+            if (form === 'signup') {
+                formContainer.style.transform = 'translateX(-33.33%)';
+            } else if (form === 'login') {
+                formContainer.style.transform = 'translateX(0)';
+            } else if (form === 'admin') {
+                formContainer.style.transform = 'translateX(-66.66%)';
+            }
+            clearFormMessages();
+        }
+        
+        function showAdminLoginForm() {
+            // Only show admin login if system doesn't need setup
+            if (systemNeedsSetup) {
+                showGlobalMessage('System needs first-time setup. Please wait for initialization.', 'info');
+                return;
+            }
+            
+            switchForm('admin');
+            adminLoginEmail.value = 'admin@abu.edu.ng';
+            adminLoginInfo.innerHTML = `
+                <i class="fas fa-user-shield"></i> System Administrator Access
+            `;
+            clearFormMessages();
+        }
+        
+        function showStudentLoginForm() {
+            formContainer.style.display = 'flex';
+            setupWizard.style.display = 'none';
+            studentDashboard.style.display = 'none';
+            adminDashboard.style.display = 'none';
+            switchForm('login');
+            clearFormMessages();
+        }
+        
+        function clearFormMessages() {
+            loginError.style.display = 'none';
+            loginSuccess.style.display = 'none';
+            signupError.style.display = 'none';
+            signupSuccess.style.display = 'none';
+            adminLoginError.style.display = 'none';
+            adminLoginSuccess.style.display = 'none';
+            setupError.style.display = 'none';
+            setupSuccess.style.display = 'none';
+        }
+        
+        async function handleLogin(isAdminLogin) {
+            const email = isAdminLogin ? adminLoginEmail.value.trim() : loginEmail.value.trim();
+            const password = isAdminLogin ? adminLoginPassword.value.trim() : loginPassword.value.trim();
+            
+            if (!email || !password) {
+                showMessage(isAdminLogin ? adminLoginError : loginError, 'Please fill in all fields');
+                return;
+            }
+            
+            const errorElement = isAdminLogin ? adminLoginError : loginError;
+            const successElement = isAdminLogin ? adminLoginSuccess : loginSuccess;
+            const button = isAdminLogin ? adminLoginBtn : loginBtn;
+            
+            showMessage(successElement, 'Logging in...', 'success');
+            button.disabled = true;
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                // Auth state change listener will handle the rest
+            } catch (error) {
+                showMessage(errorElement, getErrorMessage(error));
+                showMessage(successElement, '', 'success', false);
+                button.disabled = false;
+            }
+        }
+        
+        async function handleFirstTimeSetup() {
+            // Double-check that system actually needs setup
+            if (!systemNeedsSetup) {
+                showMessage(setupError, 'System already has admin accounts. Setup not allowed.');
+                return;
+            }
+            
+            const email = setupAdminEmail.value.trim();
+            const password = setupAdminPassword.value.trim();
+            const name = setupAdminName.value.trim();
+            const defaultLink = defaultDriveLink.value.trim();
+            
+            if (!email || !password || !name) {
+                showMessage(setupError, 'Please fill in all required fields');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showMessage(setupError, 'Password must be at least 6 characters');
+                return;
+            }
+            
+            showMessage(setupSuccess, 'Setting up system...', 'success');
+            completeSetupBtn.disabled = true;
+            
+            try {
+                // Verify one more time that no admins exist
+                const adminsSnapshot = await db.collection('admins').limit(1).get();
+                if (!adminsSnapshot.empty) {
+                    throw new Error('Admin accounts already exist. Setup not allowed.');
+                }
+                
+                // Create admin user
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                
+                // Add to admins collection
+                await db.collection('admins').doc(userCredential.user.uid).set({
+                    fullName: name,
+                    email: email,
+                    createdAt: new Date(),
+                    isSuperAdmin: true,
+                    createdDuringSetup: true
+                });
+                
+                // Create default drive links
+                const defaultLinks = {};
+                const levels = ['100', '200', '300', '400', '500'];
+                const linkToUse = defaultLink || 'https://drive.google.com/file/d/1cyxmX2YnK3b6hUp-5osX62HnWXE7N7aE/preview';
+                
+                levels.forEach(level => {
+                    defaultLinks[level] = linkToUse;
+                });
+                
+                await db.collection('config').doc('driveLinks').set(defaultLinks);
+                driveLinks = defaultLinks;
+                
+                // Update system status
+                systemNeedsSetup = false;
+                
+                showMessage(setupSuccess, 'System setup complete! Logging in as admin...', 'success');
+                
+                // Auto login
+                setTimeout(() => {
+                    handleLogin(true);
+                }, 2000);
+                
+            } catch (error) {
+                showMessage(setupError, getErrorMessage(error));
+                completeSetupBtn.disabled = false;
+            }
+        }
+        
+        async function handleSignup() {
+            // Don't allow signup during setup phase
+            if (systemNeedsSetup) {
+                showMessage(signupError, 'System is being set up. Please try again later.');
+                return;
+            }
+            
+            const fullName = signupFullName.value.trim();
+            const regNumber = signupRegNumber.value.trim();
+            const email = signupEmail.value.trim();
+            const level = signupLevel.value;
+            const password = signupPassword.value;
+            const confirmPassword = signupConfirmPassword.value;
+            
+            if (!fullName || !regNumber || !email || !password || !confirmPassword) {
+                showMessage(signupError, 'Please fill in all fields');
+                return;
+            }
+            
+            if (!email.includes('@') || !email.includes('.')) {
+                showMessage(signupError, 'Please enter a valid email address');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showMessage(signupError, 'Passwords do not match');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showMessage(signupError, 'Password must be at least 6 characters');
+                return;
+            }
+            
+            showMessage(signupSuccess, 'Creating account...', 'success');
+            signupBtn.disabled = true;
+            
+            try {
+                // Create user
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                
+                // Add student data
+                await db.collection('students').doc(userCredential.user.uid).set({
+                    fullName: fullName,
+                    regNumber: regNumber,
+                    email: email,
+                    level: level,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                });
+                
+                showMessage(signupSuccess, 'Account created! Logging in...', 'success');
+                
+                // Auto login
+                setTimeout(() => {
+                    handleLogin(false);
+                }, 1500);
+                
+            } catch (error) {
+                showMessage(signupError, getErrorMessage(error));
+                signupBtn.disabled = false;
+            }
+        }
+        
+        async function handleForgotPassword() {
+            const email = loginEmail.value.trim();
+            
+            if (!email) {
+                showMessage(loginError, 'Please enter your email address first');
+                return;
+            }
+            
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showMessage(loginSuccess, 'Password reset email sent! Check your inbox.', 'success');
+            } catch (error) {
+                showMessage(loginError, getErrorMessage(error));
+            }
+        }
+        
+        async function handleLogout() {
+            try {
+                await auth.signOut();
+                currentUser = null;
+                userData = null;
+                isAdmin = false;
+                showStudentLoginForm();
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+        
+        function validatePassword() {
+            const password = signupPassword.value;
+            const confirmPassword = signupConfirmPassword.value;
+            
+            // Check length
+            if (password.length >= 6) {
+                reqLength.classList.remove('requirement');
+                reqLength.classList.add('requirement', 'met');
+                reqLength.innerHTML = '✓ At least 6 characters';
+            } else {
+                reqLength.classList.remove('met');
+                reqLength.classList.add('requirement');
+                reqLength.innerHTML = 'Be at least 6 characters';
+            }
+            
+            // Check match
+            if (password === confirmPassword && password.length > 0) {
+                reqMatch.classList.remove('requirement');
+                reqMatch.classList.add('requirement', 'met');
+                reqMatch.innerHTML = '✓ Passwords match';
+            } else {
+                reqMatch.classList.remove('met');
+                reqMatch.classList.add('requirement');
+                reqMatch.innerHTML = 'Passwords must match';
+            }
+            
+            signupBtn.disabled = !(password.length >= 6 && password === confirmPassword);
+        }
+        
+        // ==================== DASHBOARD FUNCTIONS ====================
+        function showStudentDashboard() {
+            formContainer.style.display = 'none';
+            setupWizard.style.display = 'none';
+            studentDashboard.style.display = 'flex';
+            adminDashboard.style.display = 'none';
+            mainContainer.style.height = '90vh';
+            
+            if (userData) {
+                studentName.textContent = userData.fullName || currentUser.email;
+                studentLevel.textContent = userData.level || '300';
+                if (userData.level) {
+                    timetableLevel.value = userData.level;
+                }
+            }
+            
+            loadTimetable();
+        }
+        
+        function showAdminDashboard() {
+            formContainer.style.display = 'none';
+            setupWizard.style.display = 'none';
+            studentDashboard.style.display = 'none';
+            adminDashboard.style.display = 'flex';
+            mainContainer.style.height = '90vh';
+            
+            if (currentUser) {
+                adminName.textContent = userData?.fullName || currentUser.email || 'Administrator';
+            }
+            
+            // Initialize admin panel
+            initializeDriveLinksManager();
+            loadConfiguredTimetables();
+        }
+        
+        // ==================== GOOGLE DRIVE LINKS MANAGEMENT ====================
+        function initializeDriveLinksManager() {
+            console.log('Initializing drive links manager with:', driveLinks);
+            driveLinksContainer.innerHTML = '';
+            
+            const levels = [
+                { value: '100', label: '100 Level' },
+                { value: '200', label: '200 Level' },
+                { value: '300', label: '300 Level' },
+                { value: '400', label: '400 Level' },
+                { value: '500', label: '500 Level' }
+            ];
+            
+            levels.forEach(level => {
+                const linkItem = document.createElement('div');
+                linkItem.className = 'drive-link-item';
+                linkItem.innerHTML = `
+                    <h5>
+                        <span><i class="fas fa-graduation-cap"></i> ${level.label}</span>
+                        <span id="linkStatus-${level.value}" style="font-size: 12px; color: #666;">Not tested</span>
+                    </h5>
+                    <input type="text" 
+                           id="driveLink-${level.value}" 
+                           placeholder="https://drive.google.com/file/d/FILE_ID/preview"
+                           value="${driveLinks[level.value] || ''}">
+                    <div class="link-actions">
+                        <button class="btn-drive" onclick="testDriveLink('${level.value}')">
+                            <i class="fas fa-test"></i> Test Link
+                        </button>
+                        <button class="btn-primary" onclick="convertToPreviewLink('${level.value}')">
+                            <i class="fas fa-magic"></i> Convert to Preview
+                        </button>
+                    </div>
+                `;
+                driveLinksContainer.appendChild(linkItem);
+            });
+        }
+        
+        async function saveAllDriveLinks() {
+            const newLinks = {};
+            const levels = ['100', '200', '300', '400', '500'];
+            
+            levels.forEach(level => {
+                const input = document.getElementById(`driveLink-${level}`);
+                if (input && input.value.trim()) {
+                    newLinks[level] = input.value.trim();
+                }
+            });
+            
+            try {
+                await db.collection('config').doc('driveLinks').set(newLinks);
+                driveLinks = newLinks;
+                showGlobalMessage('Google Drive links saved successfully!', 'success');
+                loadConfiguredTimetables();
+            } catch (error) {
+                showGlobalMessage('Error saving links: ' + error.message, 'error');
+            }
+        }
+        
+        async function testAllDriveLinks() {
+            const levels = ['100', '200', '300', '400', '500'];
+            let allValid = true;
+            
+            for (const level of levels) {
+                const input = document.getElementById(`driveLink-${level}`);
+                const statusElement = document.getElementById(`linkStatus-${level}`);
+                
+                if (!input || !input.value.trim()) {
+                    statusElement.innerHTML = '<span style="color: #e74c3c;">No link</span>';
+                    allValid = false;
+                    continue;
+                }
+                
+                statusElement.innerHTML = '<span style="color: #f39c12;">Testing...</span>';
+                
+                try {
+                    const isValid = await testPDFLink(input.value.trim());
+                    if (isValid) {
+                        statusElement.innerHTML = '<span style="color: #27ae60;">✓ Working</span>';
+                        input.style.borderColor = '#27ae60';
+                    } else {
+                        statusElement.innerHTML = '<span style="color: #e74c3c;">✗ Failed</span>';
+                        input.style.borderColor = '#e74c3c';
+                        allValid = false;
+                    }
+                } catch (error) {
+                    statusElement.innerHTML = '<span style="color: #e74c3c;">✗ Error</span>';
+                    input.style.borderColor = '#e74c3c';
+                    allValid = false;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            if (allValid) {
+                showGlobalMessage('All Google Drive links are working correctly!', 'success');
+            } else {
+                showGlobalMessage('Some links failed. Please check and update them.', 'error');
+            }
+        }
+        
+        // ==================== PDF VIEWER FUNCTIONS ====================
+        function loadTimetable() {
+            const level = timetableLevel.value;
+            const driveLink = driveLinks[level];
+            
+            timetableInfo.textContent = timetableInfos[level] || 'Timetable information not available.';
+            
+            if (driveLink && driveLink.trim()) {
+                // Load the PDF in iframe
+                pdfIframe.src = driveLink;
+                storageInfo.innerHTML = `<i class="fab fa-google-drive"></i> Loaded from Google Drive`;
+                storageInfo.style.color = 'var(--drive-blue)';
+            } else {
+                // Show default message
+                pdfIframe.src = '';
+                storageInfo.innerHTML = `<i class="fas fa-info-circle"></i> No timetable configured for this level`;
+                storageInfo.style.color = 'var(--abu-red)';
+            }
+        }
+        
+        // ==================== ADMIN MANAGEMENT FUNCTIONS ====================
+        async function createAdminAccount() {
+            const email = prompt('Enter new admin email address:');
+            if (!email) return;
+            
+            const password = prompt('Enter admin password (min. 6 characters):');
+            if (!password || password.length < 6) {
+                showGlobalMessage('Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            const fullName = prompt('Enter admin full name:', 'System Administrator');
+            
+            try {
+                // Create admin user
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                
+                // Add to admins collection
+                await db.collection('admins').doc(userCredential.user.uid).set({
+                    fullName: fullName || 'System Administrator',
+                    email: email,
+                    createdAt: new Date(),
+                    createdBy: currentUser.uid,
+                    isSuperAdmin: false
+                });
+                
+                showGlobalMessage(`Admin account created for ${email}`, 'success');
+            } catch (error) {
+                showGlobalMessage(getErrorMessage(error), 'error');
+            }
+        }
+        
+        async function viewAllUsers() {
+            try {
+                const [studentsSnapshot, adminsSnapshot] = await Promise.all([
+                    db.collection('students').get(),
+                    db.collection('admins').get()
+                ]);
+                
+                let html = '<h4>Registered Users</h4>';
+                
+                html += '<h5>Administrators</h5>';
+                if (adminsSnapshot.empty) {
+                    html += '<p style="color: #666;">No admin users found.</p>';
+                } else {
+                    adminsSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        html += `
+                            <div class="timetable-item">
+                                <div class="timetable-info">
+                                    <h4>${data.fullName || 'Admin'}</h4>
+                                    <p>Email: ${data.email}</p>
+                                    <p><small>${data.isSuperAdmin ? 'Super Admin' : 'Admin'}</small></p>
+                                    <p><small>Created: ${data.createdAt?.toDate().toLocaleDateString() || 'Unknown'}</small></p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                html += '<h5 style="margin-top: 20px;">Students</h5>';
+                if (studentsSnapshot.empty) {
+                    html += '<p style="color: #666;">No student users found.</p>';
+                } else {
+                    studentsSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        html += `
+                            <div class="timetable-item">
+                                <div class="timetable-info">
+                                    <h4>${data.fullName || 'Student'}</h4>
+                                    <p>Email: ${data.email}</p>
+                                    <p>Reg. No: ${data.regNumber || 'N/A'}</p>
+                                    <p>Level: ${data.level || 'N/A'}</p>
+                                    <p><small>Joined: ${data.createdAt?.toDate().toLocaleDateString() || 'Unknown'}</small></p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                usersList.innerHTML = html;
+            } catch (error) {
+                showGlobalMessage('Error loading users: ' + error.message, 'error');
+            }
+        }
+        
+        function loadConfiguredTimetables() {
+            let html = '';
+            const levels = ['100', '200', '300', '400', '500'];
+            let hasLinks = false;
+            
+            levels.forEach(level => {
+                const driveLink = driveLinks[level];
+                if (driveLink && driveLink.trim()) {
+                    hasLinks = true;
+                    const fileId = driveLink.match(/\/d\/([^\/]+)/)?.[1] || driveLink.match(/id=([^&]+)/)?.[1] || 'unknown';
+                    const viewLink = `https://drive.google.com/file/d/${fileId}/view`;
+                    
+                    html += `
+                        <div class="timetable-item">
+                            <div class="timetable-info">
+                                <h4>${level} Level Lab Timetable</h4>
+                                <p>${timetableInfos[level] || 'No description'}</p>
+                                <p><small style="color: var(--drive-blue);">
+                                    <i class="fab fa-google-drive"></i> Google Drive Link Configured
+                                </small></p>
+                                <p><small>${driveLink.substring(0, 60)}...</small></p>
+                            </div>
+                            <div class="timetable-actions">
+                                <button onclick="testAndLoadTimetable('${level}')">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                <button onclick="window.open('${viewLink}', '_blank')">
+                                    <i class="fab fa-google-drive"></i> Open
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            timetablesList.innerHTML = hasLinks ? html : '<p style="color: #666; text-align: center;">No Google Drive links configured yet. Add links in the configuration section above.</p>';
+        }
+        
+        // ==================== UTILITY FUNCTIONS ====================
+        function getErrorMessage(error) {
+            switch (error.code) {
+                case 'auth/invalid-email': return 'Invalid email address.';
+                case 'auth/user-disabled': return 'Account disabled.';
+                case 'auth/user-not-found': return 'No account found.';
+                case 'auth/wrong-password': return 'Incorrect password.';
+                case 'auth/email-already-in-use': return 'Email already in use.';
+                case 'auth/weak-password': return 'Password too weak (min 6 chars).';
+                case 'auth/network-request-failed': return 'Network error.';
+                default: return error.message || 'An error occurred.';
+            }
+        }
+        
+        function showMessage(element, message, type = 'error', show = true) {
+            if (!show) {
+                element.style.display = 'none';
+                return;
+            }
+            
+            element.textContent = message;
+            element.style.display = 'block';
+            
+            if (type === 'success') {
+                element.style.borderLeftColor = '#2ecc71';
+                element.style.backgroundColor = 'rgba(46, 204, 113, 0.1)';
+                element.style.color = '#27ae60';
+            } else {
+                element.style.borderLeftColor = '#e74c3c';
+                element.style.backgroundColor = 'rgba(231, 76, 60, 0.1)';
+                element.style.color = '#e74c3c';
+            }
+        }
+        
+        function showGlobalMessage(message, type = 'success') {
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                z-index: 10000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                animation: fadeInUp 0.3s ease-out;
+                max-width: 400px;
+            `;
+            
+            messageDiv.style.backgroundColor = type === 'success' ? '#27ae60' : '#e74c3c';
+            messageDiv.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span><i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i> ${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: white; cursor: pointer; margin-left: 10px;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                if (messageDiv.parentElement) {
+                    messageDiv.remove();
+                }
+            }, 5000);
+        }
+        
+        // ==================== GLOBAL FUNCTIONS (for inline onclick) ====================
+        window.testDriveLink = async function(level) {
+            const input = document.getElementById(`driveLink-${level}`);
+            const statusElement = document.getElementById(`linkStatus-${level}`);
+            
+            if (!input || !input.value.trim()) {
+                statusElement.innerHTML = '<span style="color: #e74c3c;">No link provided</span>';
+                return;
+            }
+            
+            const url = input.value.trim();
+            statusElement.innerHTML = '<span style="color: #f39c12;">Testing...</span>';
+            
+            try {
+                const isValid = await testPDFLink(url);
+                if (isValid) {
+                    statusElement.innerHTML = '<span style="color: #27ae60;">✓ Link working</span>';
+                    input.style.borderColor = '#27ae60';
+                } else {
+                    statusElement.innerHTML = '<span style="color: #e74c3c;">✗ Link failed</span>';
+                    input.style.borderColor = '#e74c3c';
+                }
+            } catch (error) {
+                statusElement.innerHTML = '<span style="color: #e74c3c;">✗ Connection error</span>';
+                input.style.borderColor = '#e74c3c';
+            }
+        };
+        
+        window.convertToPreviewLink = function(level) {
+            const input = document.getElementById(`driveLink-${level}`);
+            if (!input || !input.value.trim()) return;
+            
+            const url = input.value.trim();
+            let fileId = null;
+            
+            // Try different Google Drive URL formats to extract file ID
+            const patterns = [
+                /\/d\/([^\/]+)/,
+                /id=([^&]+)/,
+                /\/file\/d\/([^\/]+)/,
+                /\/open\?id=([^&]+)/,
+                /drive\.google\.com\/file\/d\/([^\/?]+)/
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match && match[1]) {
+                    fileId = match[1];
+                    break;
+                }
+            }
+            
+            if (fileId) {
+                const previewLink = `https://drive.google.com/file/d/${fileId}/preview`;
+                input.value = previewLink;
+                showGlobalMessage(`Converted to Google Drive preview link!`, 'success');
+                window.testDriveLink(level);
+            } else {
+                showGlobalMessage('Could not extract Google Drive File ID from the link.', 'error');
+            }
+        };
+        
+        window.testAndLoadTimetable = function(level) {
+            const driveLink = driveLinks[level];
+            if (!driveLink) {
+                showGlobalMessage('No Google Drive link configured for this level', 'error');
+                return;
+            }
+            
+            showStudentDashboard();
+            setTimeout(() => {
+                timetableLevel.value = level;
+                loadTimetable();
+                showGlobalMessage(`Loading ${level} Level timetable...`, 'success');
+            }, 100);
+        };
+        
+        async function testPDFLink(url) {
+            return new Promise((resolve) => {
+                fetch(url, { method: 'HEAD', mode: 'no-cors' })
+                    .then(() => resolve(true))
+                    .catch(() => {
+                        const img = new Image();
+                        img.onload = () => resolve(true);
+                        img.onerror = () => resolve(false);
+                        img.src = url + (url.includes('?') ? '&' : '?') + 'test=' + Date.now();
+                    });
+            });
+        }
+        
+        // Initialize animations
+        setTimeout(() => {
+            document.querySelector('.header-logo').style.animation = 'pulse 2s infinite';
+        }, 2000);
+        
+        // Debug function to check current state
+        window.debugState = function() {
+            console.log('Current State:', {
+                currentUser,
+                userData,
+                isAdmin,
+                driveLinks,
+                systemNeedsSetup,
+                setupAttempts
+            });
+        };
+        
+        // REMOVED the public createDefaultAdmin function
+        // Setup can only be accessed automatically when no admins exist
+    </script>
+</body>
+</html>

@@ -1231,70 +1231,7 @@
             auth.onAuthStateChanged(handleAuthStateChange);
         });
 
-// Add this function after your Firebase initialization
-async function checkFirestoreAccess() {
-  try {
-    // Try to write a test document
-    const testRef = db.collection('_test').doc('_permission_test');
-    await testRef.set({ timestamp: new Date() });
-    await testRef.delete();
-    return true;
-  } catch (error) {
-    console.error('Firestore access denied:', error);
-    return false;
-  }
-}
 
-// Modify your checkSystemStatus function:
-async function checkSystemStatus() {
-    console.log('Checking system status...');
-    
-    // First check if Firestore is accessible
-    const hasAccess = await checkFirestoreAccess();
-    if (!hasAccess) {
-        console.log('Firestore access denied - security rules are blocking');
-        showGlobalMessage('Database connection issue. Please contact administrator.', 'error');
-        
-        // Display a clear message to the user
-        const adminLoginInfo = document.getElementById('adminLoginInfo');
-        if (adminLoginInfo) {
-            adminLoginInfo.innerHTML = `
-                <i class="fas fa-exclamation-triangle"></i> 
-                <strong>Database Error:</strong> Your Firestore database is locked by security rules.
-                <br><br>
-                Please go to <strong>Firebase Console → Firestore Database → Rules</strong> and update your security rules.
-            `;
-        }
-        
-        // Still show login form but with warning
-        systemNeedsSetup = false;
-        showStudentLoginForm();
-        return;
-    }
-    
-    try {
-        // Check if any admin exists in the system
-        const adminsSnapshot = await db.collection('admins').limit(1).get();
-        const hasAdmins = !adminsSnapshot.empty;
-        
-        console.log('System has admins:', hasAdmins);
-        
-        if (!hasAdmins) {
-            systemNeedsSetup = true;
-            console.log('System needs first-time setup');
-        } else {
-            systemNeedsSetup = false;
-            // Load drive links if they exist
-            driveLinks = await loadDriveLinks();
-            console.log('Drive links loaded:', driveLinks);
-        }
-    } catch (error) {
-        console.error('Error checking system status:', error);
-        // Show specific error message
-        showGlobalMessage('Firestore database error: ' + error.message, 'error');
-        systemNeedsSetup = false;
-    }
-}
         
         async function checkSystemStatus() {
             console.log('Checking system status...');
